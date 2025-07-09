@@ -8,6 +8,15 @@
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 
+// 统一响应输出
+function xhsJsonResponse($code, $msg, $data = []) {
+    return json_encode([
+        'code' => $code,
+        'msg' => $msg,
+        'data' => $data
+    ], 480);
+}
+
 // 获取请求参数
 function getXhsInputUrl() {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -21,15 +30,6 @@ function getXhsInputUrl() {
         return $_POST['url'] ?? null;
     }
     return null;
-}
-
-// 统一响应输出
-function xhsJsonResponse($code, $msg, $data = []) {
-    return json_encode([
-        'code' => $code,
-        'msg' => $msg,
-        'data' => $data
-    ], 480);
 }
 
 // 用cURL跟随重定向获取最终URL
