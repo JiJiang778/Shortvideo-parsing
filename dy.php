@@ -2,7 +2,7 @@
 /**
  * 抖音无水印视频与图集解析API
  * @Author: JiJiang
- * @Date: 2025年7月10日02:37:29 （更新请求头User-Agent防止dy检测）
+ * @Date: 2025年7月10日02:51:10 （更新请求头防止dy检测）
  * @Tg: @jijiang778
  */
 header('Access-Control-Allow-Origin: *');
@@ -35,7 +35,7 @@ function getDyFinalUrl($url) {
 // 主解析入口
 function parseDouyinContent($inputUrl) {
     $uaHeaders = [
-        'User-Agent: User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.61(0x18003d28) NetType/WIFI Language/zh_CN',
+        'User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.61(0x18003d28) NetType/WIFI Language/zh_CN',
         'Referer: https://www.douyin.com/',
         'Accept-Language: zh-CN,zh;q=0.9',
         'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
