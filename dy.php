@@ -2,14 +2,14 @@
 /**
  * 抖音无水印视频与图集解析API
  * @Author: JiJiang
- * @Date: 2025年7月9日14:18:28
+ * @Date: 2025年7月10日02:37:29 （更新请求头User-Agent防止dy检测）
  * @Tg: @jijiang778
  */
 header('Access-Control-Allow-Origin: *');
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 // 统一响应格式
-function dyResponse($code = 200, $msg = '解析成功', $data = []) {
+function douyinResponse($code = 200, $msg = '解析成功', $data = []) {
     return [
         'code' => $code,
         'msg' => $msg,
@@ -17,28 +17,49 @@ function dyResponse($code = 200, $msg = '解析成功', $data = []) {
     ];
 }
 
-// 主入口函数，处理请求
-function parseDouyinMedia($inputUrl)
-{
+// 用cURL跟随跳转获取最终URL
+function getDyFinalUrl($url) {
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_NOBODY, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36');
+    curl_exec($ch);
+    $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+    curl_close($ch);
+    return $finalUrl ?: $url;
+}
+
+// 主解析入口
+function parseDouyinContent($inputUrl) {
     $uaHeaders = [
-        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+        'User-Agent: User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.61(0x18003d28) NetType/WIFI Language/zh_CN',
+        'Referer: https://www.douyin.com/',
+        'Accept-Language: zh-CN,zh;q=0.9',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Connection: keep-alive',
+        'Upgrade-Insecure-Requests: 1'
     ];
-    $videoId = getDouyinId($inputUrl);
+    $videoId = extractDyId($inputUrl);
     if (!$videoId) {
-        return dyResponse(201, '未能提取到视频ID');
+        return douyinResponse(201, '未能提取到视频ID');
     }
-    $html = httpRequest('https://www.iesdouyin.com/share/video/' . $videoId, $uaHeaders);
+    $html = dyCurlGet('https://www.iesdouyin.com/share/video/' . $videoId, $uaHeaders);
+    // 调试：保存页面内容
+    file_put_contents('dy_debug.html', $html);
     if (!$html) {
-        return dyResponse(201, '请求抖音页面失败');
+        return douyinResponse(201, '请求抖音页面失败');
     }
-    // 匹配页面中的JSON数据
-    if (!preg_match('/window\._ROUTER_DATA\s*=\s*(.*?)<\/script>/s', $html, $jsonMatch)) {
-        return dyResponse(201, '未能解析到视频数据');
+    // 匹配页面中的JSON数据（兼容新版 _ROUTER_DATA 和 _RENDER_DATA）
+    if (!preg_match('/window\.(?:_ROUTER_DATA|_RENDER_DATA)\s*=\s*(.*?);?\s*<\/script>/s', $html, $jsonMatch)) {
+        return douyinResponse(201, '未能解析到视频数据');
     }
     $jsonStr = trim($jsonMatch[1]);
     $dataArr = json_decode($jsonStr, true);
     if (!isset($dataArr['loaderData']['video_(id)/page']['videoInfoRes']['item_list'][0])) {
-        return dyResponse(201, '视频数据结构异常');
+        return douyinResponse(201, '视频数据结构异常');
     }
     $item = $dataArr['loaderData']['video_(id)/page']['videoInfoRes']['item_list'][0];
     // 视频直链
@@ -70,32 +91,18 @@ function parseDouyinMedia($inputUrl)
             'url' => $item['video']['play_addr']['uri'] ?? ''
         ]
     ];
-    return dyResponse(200, '解析成功', $result);
+    return douyinResponse(200, '解析成功', $result);
 }
 
 // 提取抖音视频ID（支持短链跳转）
-function getDouyinId($shareUrl)
-{
-    $headers = @get_headers($shareUrl, true);
-    if ($headers === false) {
-        $finalUrl = $shareUrl;
-    } else {
-        if (isset($headers['Location'])) {
-            $finalUrl = is_array($headers['Location']) ? end($headers['Location']) : $headers['Location'];
-        } else {
-            $finalUrl = $shareUrl;
-        }
-    }
-    if (!is_string($finalUrl)) {
-        $finalUrl = strval($finalUrl);
-    }
+function extractDyId($shareUrl) {
+    $finalUrl = getDyFinalUrl($shareUrl);
     preg_match('/(?<=video\/)[0-9]+|[0-9]{10,}/', $finalUrl, $match);
     return $match[0] ?? null;
 }
 
-// 通用HTTP请求封装（支持GET/POST）
-function httpRequest($url, $headers = [], $postData = null)
-{
+// 通用CURL请求
+function dyCurlGet($url, $headers = [], $postData = null) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -111,10 +118,6 @@ function httpRequest($url, $headers = [], $postData = null)
     }
     curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     $output = curl_exec($ch);
-    if ($output === false) {
-        curl_close($ch);
-        return false;
-    }
     curl_close($ch);
     return $output;
 }
@@ -122,9 +125,9 @@ function httpRequest($url, $headers = [], $postData = null)
 // 入口参数校验与响应
 $inputUrl = $_GET['url'] ?? '';
 if (empty($inputUrl)) {
-    echo json_encode(dyResponse(0, '缺少url参数'), 480);
+    echo json_encode(douyinResponse(0, '缺少url参数'), 480);
     exit;
 }
-$result = parseDouyinMedia($inputUrl);
+$result = parseDouyinContent($inputUrl);
 echo json_encode($result, 480);
 ?>
