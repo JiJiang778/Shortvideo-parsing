@@ -64,6 +64,7 @@ https://api.tikhub.io/api/v1/douyin/app/v3/fetch_video_statistics?aweme_ids=
 
 提供一个测试地址： http://192.140.175.56/douyin.php?url=
 - （白嫖的服务器，两个月后失效了，可能也没有太多人使用吧、、、
+
 提供一个测试apikey：me00T2AonXUW4HsM31iTmEoR8F0PsoDfjZRK6zf9qn5ioX4lWeYizD7yMg==
 - 该apikey每日限额1$，大概是单日200次请求左右（只充了5$用来测试的，可能也没有太多人使用吧///
 
