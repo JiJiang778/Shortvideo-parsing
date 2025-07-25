@@ -6,12 +6,16 @@
 3. 增加了缓存池，一分钟内再次解析同一个视频直接获取，不耗账户余额或免费额度
 4. 提供一个测试apikey：（已内置）  8JlncGV3wnQemnsW2kTttnE8418qhKD2qYJ0/wjNkD17rHIrYeR5zDjvJg==
    ![1](https://tc.z.wiki/autoupload/f/uK53_1aH7-OLnUIPB7zaPWZIV_bRpRe-LL1zubSGClOyl5f0KlZfm6UsKj-HyTuv/20250726/5D3P/1095X328/11.png)
-5. 如果你直接用dyyy.php上传到你的服务器，那么你的解析地址就是：
+
+5. 提供一个测试地址：D我我就关机
+```
+https://api.jijiang778.top/dy.php?url=
+``` 
+6. 如果你直接用dyyy.php上传到你的服务器，php版本选择8.0就好，那么你的解析地址就是：
 ```
 http://你的服务器地址/dyyy.php?url=
 ```
-
-6. **别骂辣**
+7. **别骂辣**
 	
 
 代码很乱 纯AI零手工 依托答辩但能用
